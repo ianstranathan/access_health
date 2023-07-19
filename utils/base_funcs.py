@@ -15,21 +15,6 @@ def generic_key_client_columns() -> list:
             "Referral Date", "Enrollment Date",     "Enrollment Status",   "Discharged Date", "Program",   "Race",
             "Zip Code",      "Funder", "Ethnicity", "Gender", "Age"]
 
-# def parse(date_range: tuple,
-#           filter_func: callable,
-#           client: dict,
-#           file_name: str,
-#           entry_struct: dict, **kwargs): 
-#     if filter_func(date_range, client, file_name, entry_struct):
-#         for column_name in entry_struct["data_struct"]:
-#             if "track_file_name" in kwargs:
-#                 (entry_struct["data_struct"][column_name].append( file_name )
-#                  if column_name == "File Name"
-#                  else entry_struct["data_struct"][column_name].append( client[ column_name] ))
-#             else:
-#                 entry_struct["data_struct"][column_name].append( client[ column_name] )
-
-
 """
 Aliases can always be called with col name as snake case
 """

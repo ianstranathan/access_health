@@ -234,8 +234,17 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
         if correct_pathway_type_string_arg( open_close ) == "opened":
             return True
         # -- otherwise, we need to know what the completed status column name is && if that matches a completed status
-        completed_str = "Completed" if file_name != "pw_health_insurance.csv" else "Complete-Insured"
-        return ( client["Completed Status"] == completed_str )
+        if file_name in ["pw_health_insurance.csv", "pw_pregnancy.csv"]:
+            match file_name:
+                case "pw_health_insurance.csv":
+                    return client["Completed Status"] == "Complete-Insured"
+                case "pw_pregnancy.csv":
+                    return ("Completed" in client["Completed Status"])
+        
+        return client["Completed Status"] == "Completed"
+        # -- otherwise, we need to know what the completed status column name is && if that matches a completed status
+        # completed_str = "Completed" if file_name != "pw_health_insurance.csv" else "Complete-Insured"
+        # return ( client["Completed Status"] == completed_str )
 
     
     def parse(client: dict, _file_name: str, entry_struct: dict) -> None:
@@ -261,7 +270,6 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
         
     entry_struct = {"files":            [file_name],
                     "parsing_function": parse,
-                    "col_function":     None,
                     "data_struct":      data_struct( cols_to_look_at ),
                     "filter_func":      kwargs["filter_func"] if "filter_func" in kwargs else None
                     }
@@ -291,8 +299,8 @@ def pathways_ratio(date_range: tuple, file_name: str, write_name: str, **kwargs)
     closed = remove_exactly_repeating_clients(closed)
     
     write_multiple_sheets_direct_data_struct([opened, closed],
-                                             ["opened_cleaned", "closed_cleaned"],
-                                             (write_name + "_"),
+                                             ["opened", "closed"],
+                                             f"{write_name} ",
                                              date_range)
 
 
