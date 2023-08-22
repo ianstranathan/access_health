@@ -6,19 +6,31 @@ from os              import listdir
 
 
 # ----------------------------------------------------------------------------------------------------
-
+# -- file structure utils
+# ----------------------------------------------------------------------------------------------------
 excel_file_src_dir  = "../CCS_Excel_File_Source/"
 generated_excel_dir = "Generated_Excel_Files/"
+
+
+def get_excel_source_path() -> str:
+    return excel_file_src_dir
+
+
+def get_write_path() -> str:
+    return generated_excel_dir
 
 # ----------------------------------------------------------------------------------------------------
 # -- Pandas util funcs
 # ----------------------------------------------------------------------------------------------------
+"""
+See Err: have mixed types. Specify dtype option on import or set low_memory=False.
+"""
 def load_csv(fileName: str, path: str):
-    return pd.read_csv(path + fileName, encoding = "ISO-8859-1")
+    return pd.read_csv(path + fileName, encoding = "ISO-8859-1", engine='python')
 
 
 def load_csv(fileName: str):
-    return pd.read_csv(fileName, encoding = "ISO-8859-1")
+    return pd.read_csv(fileName, encoding = "ISO-8859-1", engine='python')
 
 def load_xlsx_sheet(xls: type[pd.io.excel._base.ExcelFile], sheetName: str) -> type[pd.core.frame.DataFrame]:
     return pd.read_excel(xls, sheetName)
@@ -119,7 +131,10 @@ def parsing_loop(entry_struct: dict, **kwargs):
             for client in dfDict:
                 entry_struct["parsing_function"](client, file_name, entry_struct)
 
-    return(entry_struct["data_struct"])
+    if "entire_entry_struct" in kwargs:
+        return entry_struct
+    else:
+        return(entry_struct["data_struct"])
 
 
 def is_valid_str(s: str) -> bool:
@@ -323,3 +338,10 @@ def get_pathway_files() -> list:
     f = listdir(excel_file_src_dir)
     return sorted([x for x in f if x[0:2] == "pw"])
 
+
+def time_in_program( client: dict, date_range: tuple ) -> float:
+    if is_valid_str( client["Enrollment Date"]):
+        if is_valid_str( client["Discharged Date"]):
+            return min(delta_time_in_days( client["Enrollment Date"], date_range[1]), delta_time_in_days( client["Enrollment Date"], client["Discharged Date"]))
+        return delta_time_in_days( client["Enrollment Date"], date_range[1])
+    return 0.0

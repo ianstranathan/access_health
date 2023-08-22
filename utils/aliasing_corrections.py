@@ -1,6 +1,6 @@
 
 def get_allowable_aliases_funcs() -> list:
-     return ["client_id", "base", "emergency", "hosptial"]
+     return ["client_id", "base", "emergency", "hosptial", "missed appointments"]
 
 
 def get_alias_func(t: str) -> callable:
@@ -13,6 +13,8 @@ def get_alias_func(t: str) -> callable:
              return emergency_department_visits
          case "hospital":
              return hosptial_admissions
+         case "missed appointments":
+             return missed_appointments
 
 
 def client_ids(file_name: str) -> str:
@@ -190,4 +192,11 @@ def health_self_rates(file_name:str) -> dict:
          case "initial_pregnancy_checklist.csv":
              return {"health_self_rate": "Health-selfrate  3"}
          #-----------------------------------------------------------------------------------
+
+def missed_appointments(file_name:str) -> dict:
+    match file_name:
+        case "adult_checklist.csv":
+             return {"missed_appointments": "Number Missed Appointments"}
+        case "initial_adult_checklist.csv":
+             return {"health_self_rate": "Missed Appts Number"}
        

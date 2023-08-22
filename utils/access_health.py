@@ -4,6 +4,41 @@ from math import isnan
 import misc
 import parsing as parsing
 
+def lee_ann_education_levels(s) -> str:
+    a = "Less than high school education"
+    b = "High school education"
+    c = "Some post secondary education"
+    d = "Bachelor’s degree and higher"
+
+    if s != s:
+        return "blank"
+    elif s == "Completed 4 year degree":
+        return d
+    elif s == "Completed 2 year degree":
+        return c
+    elif s == "Completed GED":
+        return b
+    elif s == "Completed high school":
+        return b
+    elif s == "Completed post graduate (Masters, Doctorate)":
+        return d
+    elif s == "Completed vocational school":
+        return b
+    elif s == "Don't Know":
+        return s
+    elif s == "Less than high school education":
+        return s
+    elif s == "Other":
+        return "N/A"
+    elif s == "Refused":
+        return "N/A"
+    elif s == "Some college":
+        return c
+    elif s == "Some high school":
+        return a
+    else:
+        return "!ahhhh" + s
+
 
 def clean_people_in_household(client: dict) -> str:
     people_in_household = client["People In Household"]
