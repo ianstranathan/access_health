@@ -13,8 +13,8 @@ They should be able to take in a unique modifier func to suit the particular col
 
 def generic_key_client_columns() -> list:
     return ["Income",        "People In Household", "First",               "Last",            "Client Id", "Client Created Date",
-            "Referral Date", "Enrollment Date",     "Enrollment Status",   "Discharged Date", "Program",   "Race",
-            "Zip Code",      "Funder", "Ethnicity", "Gender", "Age"]
+            "Referral Date", "Referral In-detail", "Enrollment Date",     "Enrollment Status",   "Discharged Date", "Program",   "Race",
+            "Zip Code",      "Funder", "Ethnicity", "Gender", "Age", "Coordinator"]
 
 """
 Aliases can always be called with col name as snake case
@@ -290,9 +290,10 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
     match file_name:
         case "pw_social_service_referral.csv":
             cols_to_look_at += ["Service", "Pw Referral Name"]
-        case "pw_medication_assessment.csv":    
-            cols_to_look_at += ["Medication Concerns"]
         case "pw_pregnancy.csv":
+            #cols_to_look_at = list(map(lambda x: x.replace('Pant', 'Ishan'), cols_to_look_at))
+            cols_to_look_at = ["Client" if x=="Client Id" else x for x in cols_to_look_at]
+        case "pw_immunization_referral.csv":
             #cols_to_look_at = list(map(lambda x: x.replace('Pant', 'Ishan'), cols_to_look_at))
             cols_to_look_at = ["Client" if x=="Client Id" else x for x in cols_to_look_at]
         case "pw_medical_referral.csv":
@@ -331,7 +332,7 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
         # -- if opened: we care if the start date is on the time interval
         # -- if closed: we care if the close date is on the time interval && the completed status == "Completed" (or whatever that file is)
         if entry_struct["filter_func"]:
-            if (entry_struct["filter_func"](client, date_range, file_name)
+            if (entry_struct["filter_func"](client)
                 and parsing.on_time_interval(date_range, client[ correct_date_str(open_close) ])
                 and completed_func( client)):
                 append_struct_data( client, entry_struct )

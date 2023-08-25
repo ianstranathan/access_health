@@ -23,7 +23,7 @@ def checklist_start_date_on_interval_filter_and_needed_meds(date_range: tuple, c
 """
 See base funcs for argument signature -> doesn't need file name
 """
-def served_on_interval_filter(client, date_range, file_name) -> bool:
+def served_on_time_interval(client, date_range, file_name) -> bool:
     return parsing.enrolled_during_time_interval(date_range, client)
 
 
