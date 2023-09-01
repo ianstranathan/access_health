@@ -1,9 +1,30 @@
 import parsing
 
+# ----------------------------------------------------------------------------------------------------
+
+def is_aultman_client(client: dict, date_range=None, file_name=None) -> bool:
+    if "Referral In-detail" in client:
+        return (parsing.is_valid_str(client["Referral In-detail"]) and ("Aultman" in client["Referral In-detail"] or "AULTMAN" in client["Referral In-detail"]))
+    return False
+
+
 def is_chronic_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Program" in client:
         return (parsing.is_valid_str(client["Program"]) and ("Chronic" in client["Program"] or "CHRONIC" in client["Program"]))
     return False
+
+
+def is_thrive_client(client: dict, date_range=None, file_name=None) -> bool:
+    if "Program" in client:
+        return (parsing.is_valid_str(client["Program"]) and ("Thrive" in client["Program"] or "THRIVE" in client["Program"]))
+    return False
+
+
+def is_pediatric_client(client: dict, date_range=None, file_name=None) -> bool:
+    if "Program" in client:
+        return (parsing.is_valid_str(client["Program"]) and ("Pediatric" in client["Program"] or "PEDIATRIC" in client["Program"]))
+    return False
+
 
 def is_pregnant_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Program" in client:
@@ -37,10 +58,11 @@ def referred_on_time_interval(client, date_range, file_name) -> bool:
 
 
 # ----------------------------------------------------------------------------------------------------
-
+# -- CHRONIC
+# ----------------------------------------------------------------------------------------------------
 
 def chronic_served_on_time_interval(client, date_range, file_name) -> bool:
-    return (is_chronic_client( client) and served_on_interval_filter(client, date_range, file_name))
+    return (is_chronic_client( client) and served_on_time_interval(client, date_range, file_name))
 
 
 def chronic_enrolled_on_time_interval(client, date_range, file_name) -> bool:
@@ -52,10 +74,22 @@ def chronic_referred_on_time_interval(date_range, client, file_name) -> bool:
 
 
 # ----------------------------------------------------------------------------------------------------
+# -- Pediatric
+# ----------------------------------------------------------------------------------------------------
+def pediatric_served_on_time_interval(client, date_range, file_name) -> bool:
+    return (is_pediatric_client( client) and served_on_time_interval(client, date_range, file_name))
 
 
+def pediatric_enrolled_on_time_interval(client, date_range, file_name) -> bool:
+    return (is_pediatric_client( client) and enrolled_on_time_interval(client, date_range, file_name))
+
+
+def pediatric_referred_on_time_interval(client, date_range, file_name) -> bool:
+    return (is_pediatric_client( client) and referred_on_time_interval(client, date_range, file_name))
+
+# ----------------------------------------------------------------------------------------------------
 # def pregnant_served_on_time_interval(client, date_range, file_name) -> bool:
-#     return (is_pregnant_client( client) and served_on_interval_filter(client, date_range, file_name))
+#     return (is_pregnant_client( client) and served_on_time_interval(client, date_range, file_name))
 
 
 # def pregnant_enrolled_on_time_interval(client, date_range, file_name) -> bool:

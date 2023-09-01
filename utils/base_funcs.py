@@ -281,7 +281,7 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
 
     assert (open_close in ["opened", "closed"]), "opened/ closed distinction not made, must be ['opened' or 'closed']"
     
-    cols_to_look_at = ["Client Id", "Start Date", "Completed Date", "Completed Status", "Zip Code", "Referral In-Detail", "Program", "Funder"]
+    cols_to_look_at = ["Client Id", "Start Date", "Completed Date", "Completed Status", "Zip Code", "Referral In-Detail", "Program", "Funder", "Race", "Ethnicity"]
     
     # --------------------------------------------------
     # -- Account for pathway specific metrics / naming conventions
@@ -289,10 +289,13 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
 
     match file_name:
         case "pw_social_service_referral.csv":
+            cols_to_look_at = ["Race Detail" if x=="Race" else x for x in cols_to_look_at]
             cols_to_look_at += ["Service", "Pw Referral Name"]
         case "pw_pregnancy.csv":
             #cols_to_look_at = list(map(lambda x: x.replace('Pant', 'Ishan'), cols_to_look_at))
             cols_to_look_at = ["Client" if x=="Client Id" else x for x in cols_to_look_at]
+            cols_to_look_at += ["Birth Type", "Birth Weight Grams", "Gestation Age"]
+            
         case "pw_immunization_referral.csv":
             #cols_to_look_at = list(map(lambda x: x.replace('Pant', 'Ishan'), cols_to_look_at))
             cols_to_look_at = ["Client" if x=="Client Id" else x for x in cols_to_look_at]
