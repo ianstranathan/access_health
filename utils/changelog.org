@@ -1,0 +1,11 @@
+<2023-11-20 Mon>
+Removed some cruft access_health.py and updated federal poverty rates.
+
+CCS has changed how cohorts are identified (maternal, adult, pregnant) -> all cohort filters must be changed to reflect this.
+- [ ] filters.py
+
+<2023-09-06 Wed>
+pandas has deprecated writer.save(); -> writer.close(); changed parsing.py
+
+<2023-09-15 Fri>
+CCS changed "Race" to "Race Detail" in pathway cvs files; changed base_funcs.py

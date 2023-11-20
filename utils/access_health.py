@@ -1,52 +1,25 @@
-
 from math import isnan
 # --------------------------------------------------
 import misc
 import parsing as parsing
 
-def lee_ann_education_levels(s) -> str:
-    a = "Less than high school education"
-    b = "High school education"
-    c = "Some post secondary education"
-    d = "Bachelor’s degree and higher"
-
-    if s != s:
-        return "blank"
-    elif s == "Completed 4 year degree":
-        return d
-    elif s == "Completed 2 year degree":
-        return c
-    elif s == "Completed GED":
-        return b
-    elif s == "Completed high school":
-        return b
-    elif s == "Completed post graduate (Masters, Doctorate)":
-        return d
-    elif s == "Completed vocational school":
-        return b
-    elif s == "Don't Know":
-        return s
-    elif s == "Less than high school education":
-        return s
-    elif s == "Other":
-        return "N/A"
-    elif s == "Refused":
-        return "N/A"
-    elif s == "Some college":
-        return c
-    elif s == "Some high school":
-        return a
-    else:
-        return "!ahhhh" + s
-
 
 def clean_people_in_household(client: dict) -> str:
     people_in_household = client["People In Household"]
-    if people_in_household == "-" or (people_in_household != people_in_household): #-- NaN or "-"
+    # -- convention is zero for single -> increment by one if valid string, otherwise return 1
+    people_in_household_is_valid = parsing.is_valid_str( people_in_household ) 
+
+    increment_ret = lambda x: str( int( x ) + 1 )
+    
+    if people_in_household_is_valid:
+        # -- there are occasional uses of N+
+        if "+" in people_in_household:
+            s = people_in_household.replace( "+", "")
+            return increment_ret( s )
+        else:
+            increment_ret( people_in_household )
+    else:
         return "1"
-    elif people_in_household == "10+":
-        return "10"
-    return str( int( people_in_household) + 1 ) # -- increment by one to accoutn for formatting errors
 
 
 def clean_income(client: dict) -> str:
@@ -74,12 +47,13 @@ def self_rate_scale(s: str) -> int:
             return 0
         case _:
             return 0
-        
+
+
 # -----------------------------------
 # -- Federal Poverty Utils
 # -----------------------------------
 def print_fpl_bracket_dict(data: dict, bracket_interval):
-    ret = FPL_Bracket_Dict(data_struct, bracket_size)
+    ret = fpl_bracket_dict(data_struct, bracket_size)
     for zip_code in ret:
         print(zip_code)
         for key in ret[zip_code]:
@@ -92,7 +66,6 @@ def fpl_bracket_string(fpl: float, bracket_interval: float) -> str:
     round_to_nearest_increment = lambda x, y: y * math.floor(x / y)
     lower_bound = round_to_nearest_increment(100.0 * fpl, bracket_interval)
     upper_bound = round_to_nearest_increment(100.0 * fpl, bracket_interval) + bracket_interval
-    
     return str(lower_bound) + "% to " + str(upper_bound) + "% FPL"
 
 
@@ -116,6 +89,10 @@ def percentage_below_threshold(threshold: float, ls: list):
 
 
 def avg_income(income: str) -> float: # -- formats income str ( "low" - "high" ) and return avg
+
+    if "efused" in income:
+        return 0.0
+    
     if "More" in income:
         return float(income.split("$")[1].replace(',',''))
     
@@ -126,11 +103,16 @@ def avg_income(income: str) -> float: # -- formats income str ( "low" - "high" )
     return (avg / len(income_ls))
 
 
+
 def federal_poverty_base_and_multiplier(date: str) -> dict:
     datetime_date  = misc.str_to_datetime(date)
     base: float
     multiplier: float
     match datetime_date.year:
+        case "2023":
+             base        = 14,580
+             multiplier  = 5140.0
+             
         case "2022":
              base        = 13590.0
              multiplier  = 4720.0
@@ -146,6 +128,7 @@ def federal_poverty_base_and_multiplier(date: str) -> dict:
         case _: 
              base        = 13590.0
              multiplier  = 4720.0
+             
     return {"base": base, "multiplier": multiplier}        
 
 
@@ -173,50 +156,28 @@ def test_fpl( func: callable):
         family_sizes = [family_size for x in incomes]
         print("family_size: ", family_size, " - ", *map(func, incomes, family_sizes, dates))
 
-# -----------------------------------
-# -- General 
-# -----------------------------------
-def is_chronic_client(client: dict, file_name: str) -> bool:
-
-    if "Program" in client:
-        return (parsing.is_valid_str(client["Program"]) and ("Chronic" in client["Program"] or "CHRONIC" in client["Program"]))
-    
-    print("In Access Health script, there was no 'Program' column found!!!!!", "", file_name)
-    return False
-
-
-def is_thrive_client(client: dict, file_name: str) -> bool:
-
-    if "Program" in client:
-        return (parsing.is_valid_str(client["Program"]) and ("Thrive" in client["Program"] or "CHRONIC" in client["Program"]))
-    
-    print("In Access Health script, there was no 'Program' column found!!!!!", "", file_name)
-    return False
-                
     
 def rq_considered_hr_or_i(arg: str | float) -> bool:
     if arg == "Urgent":
         return True
     elif arg == "Risk-High":
         return True
-    # elif arg == "Moderate High":
-    #     return True
     elif arg == "Risk-Very High":
         return True
     else:
         return False
 
 
-def is_current_staff(coordinator: str) -> bool:
-    current_employed_chws = ["JFOGLE",   "YHERNANDEZ", "DELLIS", # case load coordinator naming convention
-                             "EWILLIAMS","DDANIELS",   "DTHOMPSON",
-                             "KCASTEEL", "LHARPER",    "SBECKER",
-                             "RBURKES",  "BDEAN",      "BHODGE"]
-    
-    if len(coordinator.split(",")) > 1:    # "Baylor, Alison (ABAYLOR)"  -> ["Baylor", "Alison (ABAYLOR)"]
-        abbrev = coordinator.split(",")[1] # "Alison (ABAYLOR)"
-        name_to_check = abbrev[abbrev.index("(") + 1: abbrev.index(")")] # "ABAYLOR"
-        return name_to_check in current_employed_chws
-    
-    else:
-        return coordinator in current_employed_chws              
+def is_jackson_fire( s: str) -> bool:
+    return s in ["Jackson Fire",
+                 "Jackson Fire Department",
+                 "Jackson Fire Dept, Aultman",
+                 "Jackson Fire Dept.",
+                 "Jackson Township Department",
+                 "Jackson Township Fire Department",
+                 "Jackson Township Fire Dept",
+                 "Jackson Township Fire Dept.",
+                 "Jackson Twp Fire",
+                 "Jackson Twp Fire Department",
+                 "Jackson Twp Fire Dept",
+                 "Jackson Twp."]

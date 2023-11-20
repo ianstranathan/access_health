@@ -1,60 +1,77 @@
-import parsing
+# from multipledispatch import dispatch
+from parsing import is_valid_str, on_time_interval, enrolled_during_time_interval
+
+
+# ----------------------------------------------------------------------------------------------------
+# -- Cohort filters
+# ----------------------------------------------------------------------------------------------------
+
+def is_adult_client_type(client: dict, date_range=None, file_name=None) -> bool:
+    return client["Client Type"] == "Adult" or client["Client Type"] == "Maternal"
+
+
+def is_pregnant_client_type(client: dict, date_range=None, file_name=None) -> bool:
+    return client["Client Type"] == "Pregnant"
+
+
+def is_pediatric_client_type(client: dict, date_range=None, file_name=None) -> bool:
+    return client["Client Type"] == "Pediatric"
 
 # ----------------------------------------------------------------------------------------------------
 
 def is_aultman_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Referral In-detail" in client:
-        return (parsing.is_valid_str(client["Referral In-detail"]) and ("Aultman" in client["Referral In-detail"] or "AULTMAN" in client["Referral In-detail"]))
+        return (is_valid_str(client["Referral In-detail"]) and ("Aultman" in client["Referral In-detail"] or "AULTMAN" in client["Referral In-detail"]))
     return False
 
 
 def is_chronic_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Program" in client:
-        return (parsing.is_valid_str(client["Program"]) and ("Chronic" in client["Program"] or "CHRONIC" in client["Program"]))
+        return (is_valid_str(client["Program"]) and ("Chronic" in client["Program"] or "CHRONIC" in client["Program"]))
     return False
 
 
 def is_thrive_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Program" in client:
-        return (parsing.is_valid_str(client["Program"]) and ("Thrive" in client["Program"] or "THRIVE" in client["Program"]))
+        return (is_valid_str(client["Program"]) and ("Thrive" in client["Program"] or "THRIVE" in client["Program"]))
     return False
 
 
 def is_pediatric_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Program" in client:
-        return (parsing.is_valid_str(client["Program"]) and ("Pediatric" in client["Program"] or "PEDIATRIC" in client["Program"]))
+        return (is_valid_str(client["Program"]) and ("Pediatric" in client["Program"] or "PEDIATRIC" in client["Program"]))
     return False
 
 
 def is_pregnant_client(client: dict, date_range=None, file_name=None) -> bool:
     if "Program" in client:
-        return (parsing.is_valid_str(client["Program"]) and ("Pregnant" in client["Program"] or "PREGNANT" in client["Program"]))
+        return (is_valid_str(client["Program"]) and ("Pregnant" in client["Program"] or "PREGNANT" in client["Program"]))
     return False
 
 # ----------------------------------------------------------------------------------------------------
 
 def checklist_start_date_on_interval_filter(date_range: tuple, client: dict,  entry_struct: dict) -> bool:
-    if parsing.on_time_interval(date_range, client[ entry_struct["col_names"]["start_date"]]):
+    if on_time_interval(date_range, client[ entry_struct["col_names"]["start_date"]]):
         return True
     return False
 
 def checklist_start_date_on_interval_filter_and_needed_meds(date_range: tuple, client: dict,  entry_struct: dict) -> bool:
-    return parsing.on_time_interval(date_range, client[ entry_struct["col_names"]["start_date"]]) and client["Medications"] == "Y"
+    return on_time_interval(date_range, client[ entry_struct["col_names"]["start_date"]]) and client["Medications"] == "Y"
 
 """
 See base funcs for argument signature -> doesn't need file name
 """
 def served_on_time_interval(client, date_range, file_name) -> bool:
-    return parsing.enrolled_during_time_interval(date_range, client)
+    return enrolled_during_time_interval(date_range, client)
 
 
 def enrolled_on_time_interval(client, date_range, file_name) -> bool:
-    return (parsing.on_time_interval(date_range, client["Enrollment Date"])
+    return (on_time_interval(date_range, client["Enrollment Date"])
             and client["Enrollment Status"] == "Enrolled")
     
 
 def referred_on_time_interval(client, date_range, file_name) -> bool:
-    return parsing.on_time_interval(date_range, client["Referral Date"])
+    return on_time_interval(date_range, client["Referral Date"])
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -102,7 +119,7 @@ def pregnant_enrolled_on_time_interval( client, date_range, file_name) -> bool:
     This only works with Pregnancy Pathway file
     """
     assert file_name == "pw_pregnancy.csv", print("incorrect file used in pregnancy filter")
-    return parsing.on_time_interval(date_range, client["Start Date"])
+    return on_time_interval(date_range, client["Start Date"])
 
 
 def pregnant_served_on_time_interval(client, date_range, file_name) -> bool:
@@ -110,11 +127,11 @@ def pregnant_served_on_time_interval(client, date_range, file_name) -> bool:
     Per conversation with Tonya: We're defining served here as either start or completed date on interval
                                  & enrolled as start date on interval  
     """
-    return ( pregnant_enrolled_on_time_interval( client, date_range, file_name) or parsing.on_time_interval( date_range, client["Completed Date"]))
+    return ( pregnant_enrolled_on_time_interval( client, date_range, file_name) or on_time_interval( date_range, client["Completed Date"]))
 # ----------------------------------------------------------------------------------------------------
 
 
 def phq9_filter_func(date_range, client, file_name) -> bool:
     is_valid_score = lambda score: (score != score or score == "" or score == "-")
     phq9_score = int(client["Phq9 Score"]) if is_valid_score(client["Phq9 Score"]) else 0
-    return (parsing.enrolled_during_time_interval(date_range, client) and phq9_score >= 10)
+    return (enrolled_during_time_interval(date_range, client) and phq9_score >= 10)

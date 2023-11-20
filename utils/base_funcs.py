@@ -14,7 +14,15 @@ They should be able to take in a unique modifier func to suit the particular col
 def generic_key_client_columns() -> list:
     return ["Income",        "People In Household", "First",               "Last",            "Client Id", "Client Created Date",
             "Referral Date", "Referral In-detail", "Enrollment Date",     "Enrollment Status",   "Discharged Date", "Program",   "Race",
-            "Zip Code",      "Funder", "Ethnicity", "Gender", "Age", "Coordinator"]
+            "Zip Code",      "Funder", "Ethnicity", "Gender", "Age", "Coordinator", "Client Type", "Education"]
+
+
+"""
+Ohio state university wants the following categories:
+"""
+def thrive_key_client_columns() -> list:
+    return ["Client Id", "First", "Last", "Dob", "Gender", "Phone Number", "Telephone Contact", "Telephone Other", "Zip Code", "Ethnicity", "Race", "Age", "Program", "Client Type", "Enrollment Date",     "Enrollment Status",   "Discharged Date"]
+
 
 """
 Aliases can always be called with col name as snake case
@@ -104,7 +112,14 @@ def client_key_info_parse(date_range: tuple,
                           additional_columns_to_check: list = None,
                           **kwargs) -> dict:
 
-    column_names_to_check = generic_key_client_columns() + additional_columns_to_check if additional_columns_to_check else generic_key_client_columns()
+    column_names_to_check = generic_key_client_columns()
+
+    # -- (03.11.23) Thrive columns change
+    if "OSU" in kwargs:
+        column_names_to_check = thrive_key_client_columns()
+
+    if additional_columns_to_check:
+        column_names_to_check += additional_columns_to_check
     
     def parse(client: dict, file_name: str, entry_struct: dict) -> None:
         if filter_func(client, date_range, file_name):
@@ -115,14 +130,12 @@ def client_key_info_parse(date_range: tuple,
                                                                                               date_range[0]))
                 elif column_name == "Time in Program":
                     entry_struct["data_struct"][column_name].append( parsing.time_in_program( client, date_range ))
-                elif column_name == "Education Simplified":
-                    entry_struct["data_struct"][column_name].append( AH.lee_ann_education_levels( client["Education"] ))
                 else:
                     entry_struct["data_struct"][column_name].append( client[ column_name] )
 
-    entry_struct = {"files":            ["client_key_information.csv"],
+    entry_struct = {"files":            ["client_key_information.csv"] if "file_name" not in kwargs else [ kwargs["file_name"] ], # -- client key info changes over time and sometimes I'd like to use an older version
                     "parsing_function": parse,
-                    "data_struct":      parsing.data_struct( column_names_to_check )
+                    "data_struct":      parsing.data_struct( column_names_to_check  )
                     }
     
     data_struct = parsing.parsing_loop( entry_struct )
@@ -281,30 +294,37 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
 
     assert (open_close in ["opened", "closed"]), "opened/ closed distinction not made, must be ['opened' or 'closed']"
     
-    cols_to_look_at = ["Client Id", "Start Date", "Completed Date", "Completed Status", "Zip Code", "Referral In-Detail", "Program", "Funder", "Race", "Ethnicity"]
+    cols_to_look_at = ["Client Id", "Start Date", "Completed Date", "Completed Status", "Zip Code", "Referral In-Detail", "Program", "Funder", "Race Detail", "Ethnicity", "Enroll Date", ]
     
     # --------------------------------------------------
     # -- Account for pathway specific metrics / naming conventions
     # --------------------------------------------------
 
+    # cols_to_look_at = ["Race Detail" if x=="Race" else x for x in cols_to_look_at]
     match file_name:
+        
         case "pw_social_service_referral.csv":
-            cols_to_look_at = ["Race Detail" if x=="Race" else x for x in cols_to_look_at]
             cols_to_look_at += ["Service", "Pw Referral Name"]
         case "pw_pregnancy.csv":
             #cols_to_look_at = list(map(lambda x: x.replace('Pant', 'Ishan'), cols_to_look_at))
             cols_to_look_at = ["Client" if x=="Client Id" else x for x in cols_to_look_at]
-            cols_to_look_at += ["Birth Type", "Birth Weight Grams", "Gestation Age"]
+            cols_to_look_at = ["Race" if x=="Race Detail" else x for x in cols_to_look_at]
+            cols_to_look_at += ["Birth Type", "Birth Weight Grams", "Gestation Age", "Trimester At Enrollment"]
             
         case "pw_immunization_referral.csv":
             #cols_to_look_at = list(map(lambda x: x.replace('Pant', 'Ishan'), cols_to_look_at))
             cols_to_look_at = ["Client" if x=="Client Id" else x for x in cols_to_look_at]
+            cols_to_look_at = ["Race" if x=="Race Detail" else x for x in cols_to_look_at]
+            
         case "pw_medical_referral.csv":
             cols_to_look_at += ["Referral"]
+            
         case "pw_education.csv":
             cols_to_look_at += ["Other Module", "Module", "Section"]
-
-
+        case "pw_medication_assessment.csv":
+            cols_to_look_at += ["MAC Prob Getting Medication", "MAC Prob Paying Medication", "MAC Having Side Effects", "MAC More Than One Pharmacy"]
+            
+            
     def correct_date_str(s: str) -> str:
         return "Start Date" if s == "opened" else "Completed Date"
 
@@ -316,11 +336,9 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
             match file_name:
                 case "pw_health_insurance.csv":
                     return client["Completed Status"] == "Complete-Insured"
-                case "pw_pregnancy.csv":
-                    return ("Completed" in client["Completed Status"])
-        
-        return client["Completed Status"] == "Completed"
-
+                
+        #return client["Completed Status"] == "Completed"
+        return ("Completed" in client["Completed Status"])
 
     def append_struct_data(client: dict, entry_struct: dict) -> None:
         for column_name in entry_struct["data_struct"]:
@@ -360,6 +378,7 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
         print("++++++++++  Returning now ++++++++++")
         return ret_or_write_struct
 
+    
 def pathways_ratio(date_range: tuple, file_name: str, write_name: str, **kwargs):
 
     opened = ( pathway_opened_or_closed( date_range, file_name, "opened", ret=True, filter_func=kwargs["filter_func"])

@@ -72,7 +72,9 @@ def write_direct_data_struct_to_excel(data_struct: dict, start_of_file_name: str
     writer   = pd.ExcelWriter(generated_excel_dir + start_of_file_name + date_str + '.xlsx', engine='xlsxwriter')
     df       = pd.DataFrame({k: pd.Series(v, dtype='object') for k,v in data_struct.items()}) # -- = DataFrame(write_struct)
     df.to_excel(writer, sheet_name="parsed")
-    writer.save()
+    # -- 09/05/23
+    # writer.save()
+    writer.close()
 
 
 def write_multiple_sheets_direct_data_struct(arr_of_data_struct: list, arr_of_sheet_namnes: list, start_of_file_name: str, date_range: tuple):
@@ -81,8 +83,8 @@ def write_multiple_sheets_direct_data_struct(arr_of_data_struct: list, arr_of_sh
     for i, data_struct in enumerate(arr_of_data_struct):    
         df       = pd.DataFrame({k: pd.Series(v, dtype='object') for k,v in data_struct.items()}) # -- = DataFrame(write_struct)
         df.to_excel(writer, sheet_name=arr_of_sheet_namnes[i])
-    writer.save()
-
+    # writer.save()
+    writer.close()
 
 def is_xlsx(file_name: str):
     return file_name.split(".")[1] == "xlsx"
@@ -156,7 +158,10 @@ def delta_time_in_hours_12_hour_basis(a: str, b: str) -> float:
 
 
 def delta_time_in_days(a: str, b: str) -> int:
+
     return (datetime.strptime(b, '%m/%d/%Y') - datetime.strptime(a, '%m/%d/%Y')).days
+    
+    # return (datetime.strptime(b, '%m/%d/%Y') - datetime.strptime(a, '%m/%d/%Y')).days
     # except ValueError as error:
     #     print(a)
     #     print(b)
@@ -165,7 +170,6 @@ def delta_time_in_days(a: str, b: str) -> int:
     
 
 def on_time_interval(date_range: tuple, a_date: str) -> bool:
-    # -- a_date: 'mmddyyyy'
     return ( is_valid_str(a_date) and delta_time_in_days(a_date, date_range[1]) >= 0 and delta_time_in_days( date_range[0], a_date ) >= 0   )
 
 
@@ -334,7 +338,7 @@ def get_generated_files() -> None:
     return listdir( generated_excel_dir )
 
 
-def get_pathway_files() -> list:
+def get_pathway_files( **kwargs ) -> list:
     f = listdir(excel_file_src_dir)
     return sorted([x for x in f if x[0:2] == "pw"])
 

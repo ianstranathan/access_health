@@ -17,20 +17,95 @@ def get_alias_func(t: str) -> callable:
              return missed_appointments
 
 
-def client_ids(file_name: str) -> str:
+def client_id( file_name: str) -> str:
      match file_name:
          case "initial_adult_checklist.csv":
-             return {"client_id": "Client"}
+              return "Client"
          case "adult_checklist.csv":
-             return {"client_id": "Client"}
+              return "Client"
          case "initial_maternal_checklist.csv":
-             return {"client_id":"Client -"}
+              return "Client -"
          case "maternal_checklist.csv":
-             return {"client_id": "Client -"}
+              return "Client -"
+         case _:
+              return "Client Id"
+
+def enroll_date(file_name):
+     match file_name:
+         case "initial_maternal_checklist.csv":
+              return "Enroll Date 3"
+         case "maternal_checklist.csv":
+              return "Enroll Date 3"
+         case _:
+              return "Enroll Date"
+
+def start_date(file_name):
+     match file_name:
+         case "maternal_checklist.csv":
+              return "Start Date"
+         case "initial_maternal_checklist.csv":
+              return "Start Date 3-B"
          case "initial_pregnancy_checklist.csv":
-             return {"client_id": "Client Id"}
+              return "Start Date  3"
+         case "initial_pediatric_checklist.csv":
+              return "Start Date  3"
+         case _:
+              return "Start Date"
+         
+def ed_visit( file_name: str) -> str:
+     match file_name:
+         case "initial_adult_checklist.csv":
+             return "# of ED Visits"
+         case "adult_checklist.csv":
+             return "# of Visits"
+         #----------------------------------------------------------
+         case "maternal_checklist.csv":
+             return "Ed Visit Since Number"
+         case "initial_maternal_checklist.csv":
+             return "Ed Visit 12m Number"
+         #----------------------------------------------------------
          case "pregnancy_checklist.csv":
-             return {"client_id":"Client Id"}
+             return "Ed Visit Since Number"
+         case "initial_pregnancy_checklist.csv":
+             return "ER/ED Visits 12m   3"
+         #----------------------------------------------------------
+         case _:
+              return "N/A"
+
+def h_admission( file_name: str) -> str:
+     match file_name:
+         case "adult_checklist.csv":
+            return "# of Admits"
+         case "initial_adult_checklist.csv":
+            return "# of Hosp Admits"
+         #----------------------------------------------------------
+         case "maternal_checklist.csv":
+             return "Hospital Visit Number"
+         case "initial_maternal_checklist.csv":
+             return "Hospital Visit 12m Number"
+         #----------------------------------------------------------
+         case "pregnancy_checklist.csv":
+             return "# of Admits SInce"
+         case "initial_pregnancy_checklist.csv":
+             return "Hospital Visits 12m 3 (#)"
+         case _:
+             return "N/A"
+
+
+# def client_ids(file_name: str):
+#      match file_name:
+#          case "initial_adult_checklist.csv":
+#              return {"client_id": "Client"}
+#          case "adult_checklist.csv":
+#              return {"client_id": "Client"}
+#          case "initial_maternal_checklist.csv":
+#              return {"client_id":"Client -"}
+#          case "maternal_checklist.csv":
+#              return {"client_id": "Client -"}
+#          case "initial_pregnancy_checklist.csv":
+#              return {"client_id": "Client Id"}
+#          case "pregnancy_checklist.csv":
+#              return {"client_id":"Client Id"}
                      
 def base(fileName: str) -> dict:
      match fileName:
@@ -174,6 +249,7 @@ def gender_race_ethnicity(fileName: str) -> dict:
         #-----------------------------------------------------------------------------------
         case _:
             return {"gender": "Gender", "race" : "Race",    "ethnicity": "Ethnicity"}
+
        
 def health_self_rates(file_name:str) -> dict:
       match file_name:
@@ -193,6 +269,7 @@ def health_self_rates(file_name:str) -> dict:
              return {"health_self_rate": "Health-selfrate  3"}
          #-----------------------------------------------------------------------------------
 
+         
 def missed_appointments(file_name:str) -> dict:
     match file_name:
         case "adult_checklist.csv":
