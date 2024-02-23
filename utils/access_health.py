@@ -1,32 +1,53 @@
 from math import isnan
 # --------------------------------------------------
-import misc
-import parsing as parsing
+from misc import str_to_datetime
+from parsing import is_valid_str
 
 
-def clean_people_in_household(client: dict) -> str:
-    people_in_household = client["People In Household"]
-    # -- convention is zero for single -> increment by one if valid string, otherwise return 1
-    people_in_household_is_valid = parsing.is_valid_str( people_in_household ) 
+def pathway_rates() -> dict:
+    return { "pw_adult_education": 180.0,
+             "pw_behavioral": 144.0,
+             "pw_developmental_referral": 90.0,
+             "pw_education": 18.0,
+             "pw_employment": 180.0,
+             "pw_family_planning": 108.0,
+             "pw_food_security": 126.0,
+             "pw_health_insurance": 108.0,
+             "pw_housing": 270.0,
+             "pw_immunization_referral": 108.0,
+             "pw_lead": 54.0,
+             "pw_medical_home": 108.0,
+             "pw_medical_referral": 54.0,
+             "pw_medication_adherence": 126.0,
+             "pw_medication_assessment": 90.0,
+             "pw_medication_management": 180.0,
+             "pw_oral_health": 90.0,
+             "pw_postpartum": 180.0,
+             "pw_pregnancy": 360.0,
+             "pw_pregnancy_twins": 432.0,
+             "pw_pregnancy_triplets":504.0,
+             "pw_social_service_referral": 54.0,
+             "pw_smoking_cessation": 162.0,
+             "pw_transportation": 144.0,
+             # --------------------------------------------------
+             "initial_adult_checklist": 90.0,
+             "initial_pediatric_checklist": 90.0,
+             "adult_checklist": 90.0,
+             "initial_pregnancy_checklist": 90.0,
+             "pregnancy_checklist": 90.0,
+             "checklist_-_visit_form": 90.0,
+            }
 
-    increment_ret = lambda x: str( int( x ) + 1 )
-    
-    if people_in_household_is_valid:
-        # -- there are occasional uses of N+
-        if "+" in people_in_household:
-            s = people_in_household.replace( "+", "")
-            return increment_ret( s )
-        else:
-            increment_ret( people_in_household )
-    else:
-        return "1"
+
+def checklist_rate() -> float:
+    return 90.0
 
 
-def clean_income(client: dict) -> str:
-    income = client["Income"]
-    if income == "-" or income == "Don't Know" or income != income or income == "Unknown" or income == "unknown":
-        return "$0,0 - $0,0"
-    return income
+def tool_rate() -> float:
+    return 27.0
+
+
+# def pregnancy_triplet_filter(client: dict) -> bool:
 
 
 def self_rate_scale(s: str) -> int:
@@ -49,9 +70,32 @@ def self_rate_scale(s: str) -> int:
             return 0
 
 
-# -----------------------------------
+# ----------------------------------------------------------------------
 # -- Federal Poverty Utils
-# -----------------------------------
+# ----------------------------------------------------------------------
+
+def clean_people_in_household(client: dict) -> float:
+    people_in_household = client["People In Household"]
+    # -- convention is zero for single -> increment by one if valid string, otherwise return 1
+    increment_ret = lambda x: float( x ) + 1.0
+    
+    if is_valid_str( people_in_household ):
+        if "+" in people_in_household: # -- there are occasional uses of num+
+            s = people_in_household.replace( "+", "")
+            return increment_ret( s )
+        else:
+            return increment_ret( people_in_household )
+    else:
+        return 1.0
+
+
+def clean_income(client: dict) -> str:
+    income = client["Income"]
+    if income == "-" or income == "Don't Know" or income != income or income == "Unknown" or income == "unknown":
+        return "$0,0 - $0,0"
+    return income
+
+
 def print_fpl_bracket_dict(data: dict, bracket_interval):
     ret = fpl_bracket_dict(data_struct, bracket_size)
     for zip_code in ret:
@@ -105,7 +149,7 @@ def avg_income(income: str) -> float: # -- formats income str ( "low" - "high" )
 
 
 def federal_poverty_base_and_multiplier(date: str) -> dict:
-    datetime_date  = misc.str_to_datetime(date)
+    datetime_date  = str_to_datetime(date)
     base: float
     multiplier: float
     match datetime_date.year:
@@ -132,12 +176,18 @@ def federal_poverty_base_and_multiplier(date: str) -> dict:
     return {"base": base, "multiplier": multiplier}        
 
 
-def federal_poverty_level(income_str: str, family_size_str: str, date: str) -> float: # magic numbers are from federal guidlines
-    family_size = float(family_size_str) if "+" not in family_size_str else float(family_size_str[0: -1])
-    famiy_size  = family_size if family_size > 0.0 else 1.0 # there are inconsistencies with what constitutes as single in database(0 or 1)
-    income      = avg_income(income_str)
+def federal_poverty_level( client: dict, date: str) -> float:
+    family_size = clean_people_in_household( client )
+    income      = avg_income( clean_income(client) )
     base_and_multiplier = federal_poverty_base_and_multiplier( date )
-    return round(income / (base_and_multiplier["base"] + (famiy_size - 1) * base_and_multiplier["multiplier"]), 2)
+    return round(income / (base_and_multiplier["base"] + (family_size - 1) * base_and_multiplier["multiplier"]), 2)
+
+# def federal_poverty_level(income_str: str, family_size_str: str, date: str) -> float: # magic numbers are from federal guidlines
+#     family_size = float(family_size_str) # if "+" not in family_size_str else float(family_size_str[0: -1])
+#     #famiy_size  = family_size if family_size > 0.0 else 1.0 # there are inconsistencies with what constitutes as single in database(0 or 1)
+#     income      = avg_income(income_str)
+#     base_and_multiplier = federal_poverty_base_and_multiplier( date )
+#     return round(income / (base_and_multiplier["base"] + (famiy_size - 1) * base_and_multiplier["multiplier"]), 2)
 
 
 def is_in_federal_poverty(income: float, family_size: float, date: str):
@@ -181,3 +231,35 @@ def is_jackson_fire( s: str) -> bool:
                  "Jackson Twp Fire Department",
                  "Jackson Twp Fire Dept",
                  "Jackson Twp."]
+
+def is_western_stark_zip_code( zip_code: str) -> bool:
+    if is_valid_str( zip_code ):
+        zc = zip_code if "-" not in zip_code else zip_code.split("-")[0]
+        return zc in ["44608", "44662", "44706", "44626", "44612", "44608", "44613", "44614", "44666", "44216", "44614",
+                      "44646", "44647", "44708", "44718", "44720", "44614", "44646", "44647", "44662", "44666", "44646",
+                      "44706", "44681", "44666", "44647", "44618", "44689"]
+    return False
+
+def is_healthy_food_module(s: str) -> bool:
+    ls = ["Cooking for a healthy heart", 
+          "Finger foods", 
+          "Sodium and the Dietary Facts", 
+          "The ways to eat with Diabetes", 
+          "Nourishment for Mom and Baby", 
+          "Nourishment for baby", 
+          "Life's simple 7", 
+          "easy food-tips for heart healthy eating", 
+          "Heart healthy home cooking African American Style with every heartbeat is life", 
+          "EasyFood tips for heart healthy eating", 
+          "Easy food tips for a healthy heart", 
+          "the salty Six", 
+          "Healthwise for Life", 
+          "Healthy Meals on a Budget", 
+          "Heart Healthy eating", 
+          "Losing weight the healthy way", 
+          "My Plate" ]
+    predicate = is_valid_str(s) and (s in ls)
+    # print(f"{predicate}: {s}")
+    return predicate
+    
+

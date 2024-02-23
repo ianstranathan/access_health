@@ -65,7 +65,8 @@ def data_struct(cols: list) -> dict:
     """
     cols is an array of column names that the parse function will look at
     """
-    return {x: [] for x in sorted(cols)}
+    return {x: [] for x in cols}
+
     
 def write_direct_data_struct_to_excel(data_struct: dict, start_of_file_name: str, date_range: tuple):
     date_str = file_date_str(date_range)
@@ -95,9 +96,9 @@ def parsing_loop(entry_struct: dict, **kwargs):
     'Templated' excel file operation to try to keep things D.R.Y
     """
     for file_name in entry_struct["files"]:
-        print("-------------------------")
-        print(file_name)
-        print("-------------------------")
+        # print("-------------------------")
+        # print(file_name)
+        # print("-------------------------")
         
         if is_xlsx(file_name):
             xlsx_file = load_xlsx(excel_file_src_dir + file_name)
@@ -140,15 +141,13 @@ def parsing_loop(entry_struct: dict, **kwargs):
 
 
 def is_valid_str(s: str) -> bool:
-    return (isinstance(s, str) and s != "-")
+    return (s == s and isinstance(s, str) and s != "-")
 
 
 def all_are_valid_strs(*args):
     ret = True
     for a in args:
-        ret = is_valid_str(a)
-        if ret == False:
-            return ret
+        ret = ret and is_valid_str( a )
     return ret
 
 
@@ -179,21 +178,32 @@ def decrement_mmddyy_str( s: str, delta_amount: int) -> str:
     return datetime.strftime(d, '%m/%d/%Y')
 
 
-def enrolled_during_time_interval(date_range: tuple, client: dict, **kwargs):
-    if is_valid_str(client["Enrollment Date"]):
+# def enrolled_during_time_interval(date_range: tuple, client: dict, **kwargs):
+#     if is_valid_str(client["Enrollment Date"]):
+#         if is_valid_str(client["Discharged Date"]): # case: Discharge date exists
+#             # discharge date was at or after beginning of interval
+#             # enroll date was at or before end  of interval
+#             return (delta_time_in_days(date_range[0], client["Discharged Date"]) >= 0
+#                     and 
+#                     delta_time_in_days(client["Enrollment Date"], date_range[1]) >= 0
+#                     and
+#                     client["Enrollment Status"] == "Enrolled")
+
+#         else: # case Discharge date doesn't exist
+#             return (delta_time_in_days(client["Enrollment Date"], date_range[1]) >= 0 and client["Enrollment Status"] == "Enrolled")
+
+
+def enrolled_during_time_interval(date_range: tuple, client: dict, **kwargs) -> bool:
+    if (all_are_valid_strs( client["Enrollment Date"], client["Enrollment Status"])
+        and client["Enrollment Status"] == "Enrolled"
+        and (delta_time_in_days(client["Enrollment Date"], date_range[1]) >= 0)): # enrollment date must come before end
+
         if is_valid_str(client["Discharged Date"]): # case: Discharge date exists
-            # discharge date was at or after beginning of interval
-            # enroll date was at or before end  of interval
-            return (delta_time_in_days(date_range[0], client["Discharged Date"]) >= 0
-                    and 
-                    delta_time_in_days(client["Enrollment Date"], date_range[1]) >= 0
-                    and
-                    client["Enrollment Status"] == "Enrolled")
+            return (delta_time_in_days(date_range[0], client["Discharged Date"]) >= 0)  # discharge date was at or after beginning of interval
+        return True # -- no discharge date, so still enrolled ( already checked that the
+    return False    # -- requirements to even consider weren't met, so no buono
 
-        else: # case Discharge date doesn't exist
-            return (delta_time_in_days(client["Enrollment Date"], date_range[1]) >= 0 and client["Enrollment Status"] == "Enrolled")
-
-
+        
 def column_name_assertion(col_names: list, files: list, **kwargs) -> None:    
     def parse(client: dict, file_name: str, entry_struct: dict) -> None:
         if "aliasing_check" in kwargs:
@@ -332,6 +342,11 @@ def generic_key_client_columns() -> list:
 def get_checklist_files():
     f = listdir(excel_file_src_dir)
     return sorted([x for x in f if "checklist" in x])
+
+
+def get_tools_files():
+    f = listdir(excel_file_src_dir)
+    return sorted([x for x in f if "tool" in x])
 
 
 def get_generated_files() -> None:

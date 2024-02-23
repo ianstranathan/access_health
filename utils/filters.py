@@ -1,7 +1,10 @@
 # from multipledispatch import dispatch
-from parsing import is_valid_str, on_time_interval, enrolled_during_time_interval
+from parsing import is_valid_str, on_time_interval, enrolled_during_time_interval, delta_time_in_days
 
 
+# is_before = lambda x,y: all_are_valid_strs(x,y) and delta_time_in_days( x, y) >= 0
+# is_after  = lambda x,y: all_are_valid_strs(x,y) and delta_time_in_days( y, x) >= 0
+    
 # ----------------------------------------------------------------------------------------------------
 # -- Cohort filters
 # ----------------------------------------------------------------------------------------------------
@@ -17,11 +20,17 @@ def is_pregnant_client_type(client: dict, date_range=None, file_name=None) -> bo
 def is_pediatric_client_type(client: dict, date_range=None, file_name=None) -> bool:
     return client["Client Type"] == "Pediatric"
 
+def is_gibbs_client( client: dict, date_range=None, file_name=None ) -> bool:
+   return is_valid_str( client["Referral In-detail"]) and "Gibb" in client["Referral In-detail"]
+
 # ----------------------------------------------------------------------------------------------------
 
 def is_aultman_client(client: dict, date_range=None, file_name=None) -> bool:
+    # -- this is really only valid for client key informatioin parse ("Referral In-detail" as is is specific to that file)
     if "Referral In-detail" in client:
-        return (is_valid_str(client["Referral In-detail"]) and ("Aultman" in client["Referral In-detail"] or "AULTMAN" in client["Referral In-detail"]))
+        return (is_valid_str(client["Referral In-detail"]) and ("Ault" in client["Referral In-detail"] or
+                                                                "Aultman" in client["Referral In-detail"] or
+                                                                "AULTMAN" in client["Referral In-detail"]))
     return False
 
 

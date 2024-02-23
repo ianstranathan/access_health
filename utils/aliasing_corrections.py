@@ -250,30 +250,52 @@ def gender_race_ethnicity(fileName: str) -> dict:
         case _:
             return {"gender": "Gender", "race" : "Race",    "ethnicity": "Ethnicity"}
 
-       
-def health_self_rates(file_name:str) -> dict:
-      match file_name:
-         case "adult_checklist.csv":
-             return {"health_self_rate": "Health Selfrate"}
-         case "initial_adult_checklist.csv":
-             return {"health_self_rate": "Health-selfrate"}
-        #----------------------------------------------------------
-         case "maternal_checklist.csv":
-             return {"health_self_rate": "Health Selfrate"}
-         case "initial_maternal_checklist.csv":
-             return {"health_self_rate": "Health Selfrate"}
-         #-----------------------------------------------------------------------------------
-         case "pregnancy_checklist.csv":
-             return {"health_self_rate": "Health Selfrate"}
-         case "initial_pregnancy_checklist.csv":
-             return {"health_self_rate": "Health-selfrate  3"}
-         #-----------------------------------------------------------------------------------
+
+def health_self_rates(file_name:str) -> str:
+     match file_name:
+          case "adult_checklist.csv":
+               return "Health Selfrate"
+          case "initial_adult_checklist.csv":
+               return "Health-selfrate"
+          # --------------------------------------------------
+          case "maternal_checklist.csv":
+               return "Health Selfrate"
+          case "initial_maternal_checklist.csv":
+               return "Health Selfrate"
+          # --------------------------------------------------
+          case "initial_pregnancy_checklist.csv":
+               return "Health-selfrate  3"
+          case "pregnancy_checklist.csv":
+               return "Health Selfrate"
+     
+# def health_self_rates(file_name:str) -> dict:
+#       match file_name:
+#          case "adult_checklist.csv":
+#              return {"health_self_rate": "Health Selfrate"}
+#          case "initial_adult_checklist.csv":
+#              return {"health_self_rate": "Health-selfrate"}
+#         #----------------------------------------------------------
+#          case "maternal_checklist.csv":
+#              return {"health_self_rate": "Health Selfrate"}
+#          case "initial_maternal_checklist.csv":
+#              return {"health_self_rate": "Health Selfrate"}
+#          #-----------------------------------------------------------------------------------
+#          case "pregnancy_checklist.csv":
+#              return {"health_self_rate": "Health Selfrate"}
+#          case "initial_pregnancy_checklist.csv":
+#              return {"health_self_rate": "Health-selfrate  3"}
+#          #-----------------------------------------------------------------------------------
 
          
 def missed_appointments(file_name:str) -> dict:
     match file_name:
         case "adult_checklist.csv":
-             return {"missed_appointments": "Number Missed Appointments"}
+             "Number Missed Appointments"
+     
         case "initial_adult_checklist.csv":
-             return {"health_self_rate": "Missed Appts Number"}
+             return "Missed Appts Number"
+
+        case "initial_pregnancy_checklist.csv":
+             return "Missed Sched Appts 12m Number"
+     
        

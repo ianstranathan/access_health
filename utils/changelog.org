@@ -1,3 +1,7 @@
+<2024-02-12 Mon>
+- added price points for digital invoice
+- Parsing enrolled (served definition) was simplified to be less stupid
+
 <2023-11-20 Mon>
 Removed some cruft access_health.py and updated federal poverty rates.
 
