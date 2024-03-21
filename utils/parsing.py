@@ -1,4 +1,4 @@
-
+from pathlib import Path
 import functools
 import pandas as pd
 from datetime        import datetime
@@ -67,22 +67,57 @@ def data_struct(cols: list) -> dict:
     """
     return {x: [] for x in cols}
 
-    
-def write_direct_data_struct_to_excel(data_struct: dict, start_of_file_name: str, date_range: tuple):
+
+# -- TODO:
+# Consolidate this func with write_multiple_sheets_direct_data_struct (keyword pandas args or something)
+
+def write_direct_data_struct_to_excel(data_struct: dict, start_of_file_name: str, date_range: tuple, **kwargs):
+
+
+    # ++++++++++++++++++++
+    # writer   = pd.ExcelWriter(generated_excel_dir + start_of_file_name + date_str + '.xlsx', engine='xlsxwriter')
+    # df       = pd.DataFrame({k: pd.Series(v, dtype='object') for k,v in data_struct.items()}) # -- = DataFrame(write_struct)
+    # df.to_excel(writer, sheet_name="parsed")
+    # writer.close()
+    # ++++++++++++++++++++
     date_str = file_date_str(date_range)
-    writer   = pd.ExcelWriter(generated_excel_dir + start_of_file_name + date_str + '.xlsx', engine='xlsxwriter')
+    _file = f"{start_of_file_name}_{date_str}.xlsx"
+    _path = f"{generated_excel_dir}/"
+    
+    if "folder" in kwargs:
+        # -- add folder to path
+        # -- exist_ok = True => Don't throw an exception if the dir you're are trying to create already exists
+        # -- parents = True  => Any missing parents of this path are created as needed
+        folder = kwargs["folder"]
+        _path = f"{generated_excel_dir}{ folder }/"
+        Path( _path ).mkdir(parents=True, exist_ok=True)
+        
+    writer   =writer   = pd.ExcelWriter(_path + _file, engine='xlsxwriter')
     df       = pd.DataFrame({k: pd.Series(v, dtype='object') for k,v in data_struct.items()}) # -- = DataFrame(write_struct)
     df.to_excel(writer, sheet_name="parsed")
-    # -- 09/05/23
-    # writer.save()
     writer.close()
+    # -- 09/05/23 change to pandas API
+    # writer.save()
 
 
-def write_multiple_sheets_direct_data_struct(arr_of_data_struct: list, arr_of_sheet_namnes: list, start_of_file_name: str, date_range: tuple):
+def write_multiple_sheets_direct_data_struct(arr_of_data_struct: list, arr_of_sheet_namnes: list, start_of_file_name: str, date_range: tuple, **kwargs):
     date_str = file_date_str(date_range)
-    writer   = pd.ExcelWriter(generated_excel_dir + start_of_file_name + date_str + '.xlsx', engine='xlsxwriter')
+    _file = f"{start_of_file_name}_{date_str}.xlsx"
+    _path = f"{generated_excel_dir}/"
+    if "folder" in kwargs:
+        # -- add folder to path
+        # -- exist_ok = True => Don't throw an exception if the dir you're are trying to create already exists
+        # -- parents = True  => Any missing parents of this path are created as needed
+        folder = kwargs["folder"]
+        _path = f"{generated_excel_dir}{ folder }/"
+        Path( _path ).mkdir(parents=True, exist_ok=True)
+
+    writer   = pd.ExcelWriter(_path + _file, engine='xlsxwriter')
     for i, data_struct in enumerate(arr_of_data_struct):    
         df       = pd.DataFrame({k: pd.Series(v, dtype='object') for k,v in data_struct.items()}) # -- = DataFrame(write_struct)
+
+
+
         df.to_excel(writer, sheet_name=arr_of_sheet_namnes[i])
     # writer.save()
     writer.close()

@@ -117,7 +117,7 @@ def client_key_info_parse(date_range: tuple,
                           additional_columns_to_check: list = None,
                           **kwargs) -> dict:
 
-    column_names_to_check = generic_key_client_columns()
+    column_names_to_check = generic_key_client_columns() if "only_these_columns" not in kwargs else kwargs["only_these_columns"]
     
     # -- (03.11.23) Thrive columns change
     if "OSU" in kwargs:
@@ -221,8 +221,12 @@ def one_off_generic_parse(date_range: tuple,
                 if column_name == "File Name":
                     client_entry = file_name
                 elif column_name == "Reimbursement Rate":
-                    rate_key = file_name.split(".")[0]
-                    client_entry = pw_rates[ rate_key ] if rate_key in pw_rates else 0
+                    rate_key = file_name.split(".")[0]    # -- the file name sans the extension
+                    # -- rate depends on file type -> tool, checklists are const currently
+                    if "tool" in rate_key: 
+                        client_entry = pw_rates[ "tool" ]
+                    else:
+                        client_entry = pw_rates[ rate_key ] if rate_key in pw_rates else 0
                     if rate_key == "checklist_-_visit_form": # -- need to check if it was by telephone
                         if client["Visit Type"] == "Telephonic":
                             client_entry = 0.0
@@ -237,7 +241,8 @@ def one_off_generic_parse(date_range: tuple,
     
     data_struct = parsing.parsing_loop( entry_struct )
 
-    reimbursement = sum(data_struct[ "Reimbursement Rate" ])
+    if "Reimbursement Rate" in data_struct:
+        reimbursement = sum(data_struct[ "Reimbursement Rate" ])
     
     if "display_money" in kwargs:
         print( f.split(".")[0].replace("_", " ").title(), ": ", reimbursement)
@@ -246,7 +251,10 @@ def one_off_generic_parse(date_range: tuple,
         if "Total $" in kwargs["acc"]:
             kwargs["acc"]["Total $"] += reimbursement
     if "write_name" in kwargs:
-        parsing.write_direct_data_struct_to_excel(data_struct, kwargs["write_name"], date_range)
+        if "folder" in kwargs:
+            parsing.write_direct_data_struct_to_excel(data_struct, kwargs["write_name"], date_range, folder=kwargs["folder"])
+        else:
+            parsing.write_direct_data_struct_to_excel(data_struct, kwargs["write_name"], date_range)
 
     return data_struct
 
@@ -375,7 +383,7 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
     cols_to_look_at = ["Client Id", "Start Date", "Completed Date",
                        "Completed Status", "Zip Code","Referral In-Detail",
                        "Program", "Funder", "Race Detail",
-                       "Ethnicity", "Enroll Date", "Type", "Discharged Reason", 
+                       "Ethnicity", "Enroll Date", "Type", "Discharged Reason", "Coordinator" , 
                        "Reimbursement Rate"] # -- see access_health.py for rates
     
     # --------------------------------------------------
@@ -475,7 +483,7 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
     ret_or_write_struct = parsing.parsing_loop( entry_struct )
 
     if "write" in kwargs and kwargs["write"]:
-        parsing.write_direct_data_struct_to_excel( ret_or_write_struct, f"{file_name } {open_close} " , date_range)
+        parsing.write_direct_data_struct_to_excel( ret_or_write_struct, f"{file_name } {open_close} " , date_range, folder=kwargs["folder"] if "folder" in kwargs else None)
         #print("++++++++++  Writing now ++++++++++")
               
     if "ret" in kwargs and kwargs["ret"]:
@@ -485,51 +493,58 @@ def pathway_opened_or_closed(date_range: tuple, file_name: str, open_close: str,
     
 def pathways_ratio(date_range: tuple, file_name: str, write_name: str, **kwargs):
 
-    opened = ( pathway_opened_or_closed( date_range, file_name, "opened", ret=True, filter_func=kwargs["filter_func"])
-               if "filter_func" in kwargs
-               else pathway_opened_or_closed( date_range, file_name, "opened", ret=True) )
+    _filter_func = kwargs["filter_func"] if "filter_func" in kwargs else None
+    _folder      = kwargs["folder"]      if "folder"      in kwargs else None
+    # opened = ( pathway_opened_or_closed( date_range, file_name, "opened", ret=True, filter_func=kwargs["filter_func"])
+    #            if "filter_func" in kwargs
+    #            else pathway_opened_or_closed( date_range, file_name, "opened", ret=True) )
 
-    closed = ( pathway_opened_or_closed( date_range, file_name, "closed", ret=True, filter_func=kwargs["filter_func"])
-               if "filter_func" in kwargs
-               else pathway_opened_or_closed( date_range, file_name, "closed", ret=True) )
-    
+    # closed = ( pathway_opened_or_closed( date_range, file_name, "closed", ret=True, filter_func=kwargs["filter_func"], folder=kwargs["folder"])
+    #            if "filter_func" in kwargs
+    #            else pathway_opened_or_closed( date_range, file_name, "closed", ret=True) )
+    opened = pathway_opened_or_closed( date_range, file_name, "opened", ret=True, filter_func=_filter_func, folder=_folder)
+    closed = pathway_opened_or_closed( date_range, file_name, "closed", ret=True, filter_func=_filter_func, folder=_folder)
     opened = parsing.remove_exactly_repeating_clients(opened)
     closed = parsing.remove_exactly_repeating_clients(closed)
 
     # print( f"{file_name}: \n Opened: \n {len( opened['Start Date'])} \n Closed:\n {len( closed['Start Date'])} \n \n")
 
-    client_key = "Client Id" if "Client Id" in opened.keys() else "Client"
+    
+    client_key = "Client Id" if ("Client Id" in opened.keys() or "Client Id" in closed.keys() ) else "Client"
 
     
     # # -- output opened
-    title_str = file_name.split('.')[0][3:].title().replace("_", " ")
-    print()
-    print( title_str )
-    
-    if opened.keys():
-        opened_len = len( opened[client_key])
-        print( f"Opened: { opened_len }")
-        if "acc" in kwargs:
-            kwargs["acc"]["Total Opened"] += opened_len
-    # -- output closed
-    if closed.keys():
-        closed_len = len( closed[client_key])
-        print( f"Closed: { closed_len }")
-        reimbursement = sum( closed["Reimbursement Rate"])
-        print( f"${ reimbursement }")
+    if "invoice_print" in kwargs:
+        title_str = file_name.split('.')[0][3:].title().replace("_", " ")
         print()
-        
-        if "acc" in kwargs:
-            kwargs["acc"]["Total Closed"] += closed_len
-            kwargs["acc"]["Total $"] += reimbursement
+        print( title_str )
+    
+        if opened.keys():
+            opened_len = len( opened[client_key])
+            print( f"Opened: { opened_len }")
+            if "acc" in kwargs:
+                kwargs["acc"]["Total Opened"] += opened_len
+                # -- output closed
+        if closed.keys():
+            closed_len = len( closed[client_key])
+            print( f"Closed: { closed_len }")
+            reimbursement = sum( closed["Reimbursement Rate"])
+            print( f"${ reimbursement }")
+            print()
 
+            if "acc" in kwargs:
+                kwargs["acc"]["Total Closed"] += closed_len
+                kwargs["acc"]["Total $"] += reimbursement
+
+            
     if "ret" in kwargs:
         return {"opened": opened, "closed": closed}
     else:
         parsing.write_multiple_sheets_direct_data_struct([opened, closed],
                                                          ["opened", "closed"],
                                                          f"{write_name} ",
-                                                         date_range)
+                                                         date_range,
+                                                         folder=_folder)
 
 """
 Only valid for HUB 1.0 checklists
@@ -688,3 +703,5 @@ def checklist_before_and_after_rating( date_range: tuple,
                                                   monthly_cols_to_check)
 
     parsing.write_direct_data_struct_to_excel( monthly_client_parse, f"{monthly_checklist_file.split('.')[0]} ", date_range)
+
+    

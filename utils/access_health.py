@@ -3,6 +3,35 @@ from math import isnan
 from misc import str_to_datetime
 from parsing import is_valid_str
 
+# (defun complement (fn)
+# #’(lambda (&rest args) (not (apply fn args))))
+
+def complement( fn: callable ) -> callable:
+    return lambda *args: not fn(args)
+                              
+def invalid_funders( s: str ) -> bool:
+    complement( valid_funder( s ))
+
+"""
+valid members are pulled from client key information
+"""
+def valid_funder( s: str) -> bool:
+    if is_valid_str( s ):
+        return s in ["AmeriHealth",
+                 "AmeriHealth Caritas",
+                     "Anthem",
+                     "Buckeye",
+                     "CareSource",
+                     "Humana",
+                     "Medicaid",
+                     "Molina",
+                     "Paramount",
+                     "Private Insurance",
+                     "United Healthcare",]
+    return False
+        #"No Insurance",
+        #"In-Kind",
+        #"(blank)"
 
 def pathway_rates() -> dict:
     return { "pw_adult_education": 180.0,
@@ -30,12 +59,16 @@ def pathway_rates() -> dict:
              "pw_smoking_cessation": 162.0,
              "pw_transportation": 144.0,
              # --------------------------------------------------
+             # Change this to reflect one value
+             # --------------------------------------------------
              "initial_adult_checklist": 90.0,
              "initial_pediatric_checklist": 90.0,
              "adult_checklist": 90.0,
              "initial_pregnancy_checklist": 90.0,
              "pregnancy_checklist": 90.0,
              "checklist_-_visit_form": 90.0,
+             # --------------------------------------------------
+             "tool": 27.0,
             }
 
 
@@ -263,3 +296,13 @@ def is_healthy_food_module(s: str) -> bool:
     return predicate
     
 
+def client_key_info_coordinators_to_pathway_coordinators( chw_array: list=None, chw_dict=None ):
+    if chw_array:
+        return [ chw_name.split("(")[1][0: -1] for chw_name in chw_array ]
+    elif chw_dict:
+        return [ chw_name.split("(")[1][0: -1] for chw_name in chw_dict.keys() ]
+
+
+def pw_write_name( pw: str):
+    return pw.split(".")[0]
+        
